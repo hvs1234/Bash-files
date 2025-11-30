@@ -266,7 +266,7 @@ export const handleLogin =
       const fields = { username, password };
       const empty = Object.keys(fields).filter((k) => !fields[k]);
       if (empty.length) {
-        toast.warn(\`Required \${empty.join(" and ")}\`);
+        toast.warn(`Required ${empty.join(" and ")}`);
         return;
       }
 
@@ -287,7 +287,7 @@ export const handleSignup =
       const fields = { createUsername, createEmail, createPassword };
       const empty = Object.keys(fields).filter((k) => !fields[k]);
       if (empty.length) {
-        toast.warn(\`Required \${empty.join(" and ")}\`);
+        toast.warn(`Required ${empty.join(" and ")}`);
         return;
       }
       dispatch(setIsSignup(true));
@@ -1172,6 +1172,39 @@ const AuthMain = () => {
 };
 
 export default AuthMain;
+EOF
+
+cat > src/globalService/Data.js << 'EOF'
+export const NavLink = [
+  {
+    id: 1,
+    title: "Home",
+    to: "/default",
+  },
+  {
+    id: 2,
+    title: "About Us",
+    to: "/default",
+  },
+  {
+    id: 3,
+    title: "Course",
+    to: "#",
+    submenu: [
+      { id: 1, title: "Our Course", to: "/default" },
+      {
+        id: 2,
+        title: "AI Course",
+        to: "/default",
+      },
+    ],
+  },
+  {
+    id: 7,
+    title: "Contact Us",
+    to: "/default",
+  },
+];
 EOF
 
 cat > index.html << 'EOF'
