@@ -345,6 +345,9 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   isMenuOpen: false,
+  currentPage: 1,
+  itemsPerPage: 10,
+  selectedRows: [],
 };
 
 const Slice = createSlice({
@@ -354,41 +357,225 @@ const Slice = createSlice({
     setMenuOpen: (state, action) => {
       state.isMenuOpen = action.payload;
     },
+    setCurrentPage(state, action) {
+      state.currentPage = action.payload;
+    },
+    setItemsPerPage(state, action) {
+      state.itemsPerPage = action.payload;
+    },
+    toggleRow(state, action) {
+      const id = action.payload;
+      if (state.selectedRows.includes(id)) {
+        state.selectedRows = state.selectedRows.filter(
+          (rowId) => rowId !== id
+        );
+      } else {
+        state.selectedRows = [...state.selectedRows, id];
+      }
+    },
+    toggleSelectAll(state, action) {
+      const currentRows = action.payload;
+      const allSelected =
+        currentRows.length > 0 &&
+        currentRows.every((row) => state.selectedRows.includes(row.id));
+
+      if (allSelected) {
+        state.selectedRows = state.selectedRows.filter(
+          (id) => !currentRows.some((row) => row.id === id)
+        );
+      } else {
+        const newIds = currentRows
+          .map((row) => row.id)
+          .filter((id) => !state.selectedRows.includes(id));
+        state.selectedRows = [...state.selectedRows, ...newIds];
+      }
+    },
+    clearSelectedRows(state) {
+      state.selectedRows = [];
+    },
   },
 });
 
-export const { setMenuOpen } = Slice.actions;
+export const {
+  setMenuOpen,
+  setCurrentPage,
+  setItemsPerPage,
+  toggleRow,
+  toggleSelectAll,
+  clearSelectedRows,
+} = Slice.actions;
+
 export default Slice.reducer;
+EOF
+
+cat > src/globalService/GlobalHandlers.js << 'EOF'
+import {
+  clearSelectedRows,
+  setCurrentPage,
+  setItemsPerPage,
+  toggleRow,
+  toggleSelectAll,
+} from "./GlobalSlice";
+
+export const handlePageChange = (page, pageSize) => async (dispatch) => {
+  dispatch(setCurrentPage(page));
+  dispatch(setItemsPerPage(pageSize));
+};
+
+export const handleShowSizeChange = (page, pageSize) => async (dispatch) => {
+  dispatch(setCurrentPage(1));
+  dispatch(setItemsPerPage(pageSize));
+};
+
+export const handleToggleRow = (id) => async (dispatch) => {
+  dispatch(toggleRow(id));
+};
+
+export const handleToggleSelectAll = (currentRows) => async (dispatch) => {
+  dispatch(toggleSelectAll(currentRows));
+};
+
+export const handleClearSelection = () => async (dispatch) => {
+  dispatch(clearSelectedRows());
+};
 EOF
 
 cat > src/Default.jsx << 'EOF'
 /* eslint-disable no-unused-vars */
 import React from "react";
 import { GiRobotGolem } from "react-icons/gi";
+import DefaultTable from "./DefaultTable";
 
 const Default = () => {
   return (
     <>
       <div
-        className={`w-full h-screen bg-[#d7fff3] flex gap-8 items-center justify-center text-center`}
+        className={`w-full h-screen px-32 bg-[#d7fff3] flex flex-col gap-8 items-center justify-center`}
       >
-        <GiRobotGolem
-          size={60}
-          className={`text-2xl animate-bounce text-[#414141]`}
-        />
-        <h1 className={`text-4xl font-extrabold text-[#5959ad]`}>
-          Welcome to Hvs Great App
-        </h1>
-        <GiRobotGolem
-          size={60}
-          className={`text-2xl animate-bounce text-[#414141]`}
-        />
+        <div className={`flex gap-8 items-center justify-center text-center`}>
+          <GiRobotGolem
+            size={60}
+            className={`text-2xl animate-bounce text-[#414141]`}
+          />
+          <h1 className={`text-4xl font-extrabold text-[#5959ad]`}>
+            Welcome to Hvs Great App
+          </h1>
+          <GiRobotGolem
+            size={60}
+            className={`text-2xl animate-bounce text-[#414141]`}
+          />
+        </div>
+        {/* <DefaultTable /> */}
       </div>
     </>
   );
 };
 
 export default Default;
+EOF
+
+cat > src/DefaultTable.jsx << 'EOF'
+/* eslint-disable no-unused-vars */
+import { useState } from "react";
+import { formatDate } from "./utils/formatUtils";
+import { Modal } from "antd";
+import Table from "./globalComponents/Table";
+import { TableDummyData } from "./globalService/Data";
+
+const DefaultTable = () => {
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [docModalVisible, setDocModalVisible] = useState(false);
+  const [docList, setDocList] = useState([]);
+  const [searchText, setSearchText] = useState("");
+
+  const defaultColumns = [
+    { header: "ID", accessor: (row) => row.id },
+    { header: "Name", accessor: (row) => row.name },
+    { header: "Algorithm", accessor: (row) => row.algorithm },
+    {
+      header: "Created On",
+      accessor: (row) => (
+        <div className="flex items-center gap-4">
+          <p className="text-2xl text-[#888888] font-normal">
+            {formatDate(row.created_on)}
+          </p>
+        </div>
+      ),
+    },
+    {
+      header: "Status",
+      accessor: (row) => {
+        let text = "#47B881";
+        if (row.status === "Pending" || row.status === "Not Started") {
+          text = "#FFC000";
+        } else if (row.status === "Failed") {
+          text = "red";
+        }
+        return (
+          <span
+            className="px-8 py-2 rounded-lg"
+            style={{ backgroundColor: "#E9F6F0", color: text }}
+          >
+            {row.status}
+          </span>
+        );
+      },
+    },
+  ];
+
+  const filteredDocs = docList.filter((doc) =>
+    doc.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  return (
+    <>
+      <Table
+        title={"Dataset Table"}
+        columns={defaultColumns}
+        data={TableDummyData || []}
+        tooltipShow={true}
+        checkData={false}
+        tableIndex={true}
+      />
+      <Modal
+        open={docModalVisible}
+        onCancel={() => setDocModalVisible(false)}
+        footer={null}
+        title="Documents"
+        centered
+      >
+        <div className="flex flex-col gap-4">
+          <div className="bg-[#FAFAFA] rounded-xl px-8 py-2 border border-[#d2d2d2] outline-none w-full flex items-center gap-4 mb-4">
+            <i className="fa-solid fa-search text-2xl text-[#888888]" />
+            <input
+              type="text"
+              placeholder="Search Pdf"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="text-[#888888] text-2xl font-normal outline-none w-full"
+            />
+          </div>
+          <div className="flex flex-col gap-8 custom-scrollbar overflow-y-auto max-h-[50vh] my-4">
+            {filteredDocs.length > 0 ? (
+              filteredDocs.map((doc, index) => (
+                <div key={index} className="flex items-center gap-4">
+                  <i className="fa-solid fa-document text-xl text-[#555598]" />
+                  <p className="text-2xl text-[#888888] font-normal">{doc}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-2xl text-[orangered] text-center">
+                Document not found
+              </p>
+            )}
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
+};
+
+export default DefaultTable;
 EOF
 
 cat > src/globalComponents/btns/ViewBtn.jsx << 'EOF'
@@ -1192,11 +1379,7 @@ export const NavLink = [
     to: "#",
     submenu: [
       { id: 1, title: "Our Course", to: "/default" },
-      {
-        id: 2,
-        title: "AI Course",
-        to: "/default",
-      },
+      { id: 2, title: "AI Course", to: "/default" },
     ],
   },
   {
@@ -1205,6 +1388,338 @@ export const NavLink = [
     to: "/default",
   },
 ];
+
+const algorithms = [
+  "GPT-4",
+  "Llama 2",
+  "Falcon",
+  "Mistral",
+  "Gemini",
+  "Claude",
+  "GPT-3.5",
+  "BERT",
+  "T5",
+  "PaLM",
+  "OPT",
+  "BLOOM",
+];
+
+const status = ["Ready", "Pending", "Failed"];
+
+const datasetNames = [
+  "Technical Manual",
+  "Industrial Report",
+  "Sensor Data Archive",
+  "Maintenance Logs",
+  "Weather Records",
+  "Satellite Imagery Set",
+  "Operational Handbook",
+  "Incident Reports",
+  "Training Dataset",
+  "Communications Log",
+  "Research Paper Collection",
+  "Blueprint Repository",
+  "Performance Metrics",
+  "Inventory List",
+  "Mission Briefings",
+  "Navigation Charts",
+  "Equipment Specifications",
+  "Test Results",
+  "Safety Guidelines",
+  "Personnel Records",
+  "Project Documentation",
+  "Simulation Data",
+  "Inspection Reports",
+  "Environmental Data",
+  "Procurement Records",
+  "Quality Assurance Logs",
+  "Deployment Plans",
+  "Compliance Documents",
+  "Budget Reports",
+  "System Architecture Files",
+  "Audit Trail",
+];
+
+function randomDate(start, end) {
+  const date = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+  const options = {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  };
+  return (
+    date.toLocaleString("en-US", options).replace(",", "") +
+    " at " +
+    date
+      .toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase()
+  );
+}
+
+function generateRandomHash(length = 8) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+export const TableDummyData = Array.from({ length: 30 }, (_, i) => ({
+  id: generateRandomHash(8),
+  name: datasetNames[i % datasetNames.length],
+  algorithm: algorithms[i % algorithms.length],
+  documents: \`Parsing_Doc_\${i + 1}.pdf\`,
+  created_on: randomDate(new Date(2024, 0, 1), new Date(2025, 11, 31)),
+  status: status[i % status.length],
+}));
+EOF
+
+cat <<'EOF' > src/globalComponents/Table.jsx
+/* eslint-disable no-unused-vars */
+import React from "react";
+import { Empty, Pagination, Tooltip } from "antd";
+import { motion } from "framer-motion";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  handlePageChange,
+  handleShowSizeChange,
+  handleToggleRow,
+  handleToggleSelectAll,
+} from "../globalService/GlobalHandlers";
+
+const Table = ({
+  tableTitle,
+  columns,
+  data,
+  tooltipShow,
+  checkData = false,
+  tableIndex = false,
+  tableLoader,
+  detailMode = false,
+  detailView,
+}) => {
+  const { currentPage, itemsPerPage, selectedRows } = useSelector(
+    (s) => s.globalApp
+  );
+  const dispatch = useDispatch();
+  const rows = Array.isArray(data) ? data : [];
+  const totalItems = rows.length;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const currentRows = rows.slice(startIndex, endIndex);
+
+  const allSelected =
+    currentRows.length > 0 &&
+    currentRows.every((row) => selectedRows.includes(row.id));
+
+  return (
+    <div className="w-full rounded-xl">
+      <div className="overflow-x-auto custom-scrollbar rounded-xl w-full">
+        <div className="h-[42vh] overflow-y-auto custom-scrollbar">
+          <table className="w-full border-collapse rounded-xl shadow-md whitespace-nowrap">
+            <thead className="sticky top-0 z-10 bg-[#D6E2FE] text-[#414141]">
+              <tr>
+                {checkData && (
+                  <th className="px-8 py-7 sticky left-0 z-10 bg-[#D6E2FE]">
+                    <input
+                      type="checkbox"
+                      className="w-[18px] h-[18px] cursor-pointer"
+                      checked={
+                        currentRows.length > 0 &&
+                        currentRows.every((row) =>
+                          selectedRows.includes(row.id)
+                        )
+                      }
+                      onChange={() =>
+                        dispatch(handleToggleSelectAll(currentRows))
+                      }
+                    />
+                  </th>
+                )}
+                {tableIndex === true && (
+                  <th
+                    className={`px-8 py-7 text-left text-xl font-semibold sticky ${
+                      checkData === true ? "left-32" : "left-0"
+                    } z-10 bg-[#D6E2FE]`}
+                  >
+                    S. No.
+                  </th>
+                )}
+                {columns.map((column, index) => (
+                  <th
+                    key={index}
+                    className="px-8 py-7 text-left text-xl font-semibold"
+                  >
+                    {column.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            {tableLoader ? (
+              [...Array(18)].map((_, index) => (
+                <motion.tr
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className={`${
+                    index % 2 === 0 ? "bg-[#f9f9ff]" : "bg-white"
+                  } border-t border-[#e5e5e5]`}
+                >
+                  {Array.from({
+                    length:
+                      columns.length +
+                      (checkData ? 1 : 0) +
+                      (tableIndex ? 1 : 0),
+                  }).map((__, colIndex) => (
+                    <td key={colIndex} className="px-8 py-4">
+                      <motion.div
+                        initial={{ backgroundPosition: "-200% 0" }}
+                        animate={{ backgroundPosition: "200% 0" }}
+                        transition={{
+                          duration: 1.2,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                        className="h-16 w-3/4 rounded-md bg-linear-to-r from-[#e0e0e0] via-[#f0f0f0] to-[#e0e0e0] bg-size-[200%_100%]"
+                      />
+                    </td>
+                  ))}
+                </motion.tr>
+              ))
+            ) : (
+              <tbody>
+                {currentRows.length > 0 ? (
+                  currentRows.map((row, rowIndex) => (
+                    <tr
+                      key={row.id}
+                      onClick={detailMode ? () => detailView(row) : null}
+                      className={`${
+                        rowIndex % 2 === 0 ? "bg-[#f2f2f2]" : "bg-white"
+                      } border-t border-[#e5e5e5] hover:opacity-[0.8] ${
+                        detailMode ? "cursor-pointer" : ""
+                      }`}
+                    >
+                      {checkData && (
+                        <td
+                          className={`sticky left-0 ${
+                            rowIndex % 2 === 0 ? "bg-[#f2f2f2]" : "bg-white"
+                          } px-8 py-4`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="w-[18px] h-[18px] cursor-pointer"
+                            checked={selectedRows.includes(row.id)}
+                            onChange={() => dispatch(handleToggleRow(row.id))}
+                          />
+                        </td>
+                      )}
+                      {tableIndex === true && (
+                        <td
+                          className={`sticky ${
+                            checkData === true ? "left-32" : "left-0"
+                          } ${
+                            rowIndex % 2 === 0 ? "bg-[#f2f2f2]" : "bg-white"
+                          } px-8 py-7 text-xl text-[#414141] font-medium`}
+                        >
+                          {startIndex + rowIndex + 1}.
+                        </td>
+                      )}
+                      {columns.map((column, colIndex) => {
+                        const accessorOutput = column.accessor(row, rowIndex);
+                        const truncatedOutput =
+                          typeof accessorOutput === "string"
+                            ? accessorOutput.split(" ").slice(0, 10).join(" ") +
+                              (accessorOutput.split(" ").length > 10
+                                ? "..."
+                                : "")
+                            : accessorOutput;
+
+                        return (
+                          <td
+                            key={colIndex}
+                            className="px-8 py-4 text-xl text-[#414141] font-medium"
+                          >
+                            {tooltipShow ? (
+                              <Tooltip
+                                title={
+                                  <div
+                                    style={{
+                                      color: "#000",
+                                      maxWidth: "500px",
+                                      whiteSpace: "normal",
+                                      wordWrap: "break-word",
+                                    }}
+                                  >
+                                    {accessorOutput}
+                                  </div>
+                                }
+                                color="#fff"
+                                overlayInnerStyle={{
+                                  color: "#000",
+                                  background: "#fff",
+                                  maxWidth: "500px",
+                                  whiteSpace: "normal",
+                                  wordWrap: "break-word",
+                                }}
+                              >
+                                <span>{truncatedOutput}</span>
+                              </Tooltip>
+                            ) : (
+                              <span>{truncatedOutput}</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={columns.length + 2}
+                      className="px-8 py-16 text-center text-xl text-[#666]"
+                    >
+                      <Empty />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            )}
+          </table>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-8 items-center py-4 mt-8">
+        <span className="text-xl text-[#414141] font-normal">
+          {totalItems > 0 ? `${startIndex + 1} - ${endIndex}` : "0 - 0"} of{" "}
+          {totalItems}
+        </span>
+        <Pagination
+          current={currentPage}
+          total={totalItems}
+          pageSize={itemsPerPage}
+          showSizeChanger
+          showQuickJumper
+          pageSizeOptions={["10", "20", "50", "100"]}
+          onChange={(page, pageSize) => {
+            dispatch(handlePageChange(page, pageSize));
+          }}
+          onShowSizeChange={(page, pageSize) => {
+            dispatch(handleShowSizeChange(page, pageSize));
+          }}
+          className="custom-pagination"
+        />
+      </div>
+    </div>
+  );
+};
+
+export default Table;
 EOF
 
 cat > index.html << 'EOF'
