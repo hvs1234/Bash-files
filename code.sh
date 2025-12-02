@@ -1473,7 +1473,7 @@ export const TableDummyData = Array.from({ length: 30 }, (_, i) => ({
   id: generateRandomHash(8),
   name: datasetNames[i % datasetNames.length],
   algorithm: algorithms[i % algorithms.length],
-  documents: \`Parsing_Doc_\${i + 1}.pdf\`,
+  documents: `Parsing_Doc_${i + 1}.pdf`,
   created_on: randomDate(new Date(2024, 0, 1), new Date(2025, 11, 31)),
   status: status[i % status.length],
 }));
