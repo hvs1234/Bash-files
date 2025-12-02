@@ -354,12 +354,14 @@ touch src/ProtectedRoute.jsx
 touch src/utils/Store.js
 touch src/Default.jsx
 touch src/AppRoutes.js
+touch src/DefaultTable.jsx
 touch src/features/auth/services/Payload.js
 touch src/features/auth/services/toolkit/AuthSlice.js
 touch src/features/auth/services/toolkit/AuthHandlers.js
 touch src/globalComponents/btns/ViewBtn.jsx
 touch src/globalComponents/Header.jsx
 touch src/globalComponents/Footer.jsx
+touch src/globalComponents/Table.jsx
 touch .vscode/settings.json
 touch src/globalService/GlobalSlice.js
 touch src/globalService/GlobalHandlers.js
