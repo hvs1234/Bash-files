@@ -339,7 +339,7 @@ const ChatBotMain = () => {
 export default ChatBotMain;
 EOF
 
-cat > src/features/chatBot/services/toolkit/ChatBotSlice.jsx << 'EOF'
+cat > src/features/chatBot/services/toolkit/ChatBotSlice.js << 'EOF'
 /* eslint-disable no-unused-vars */
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -390,7 +390,7 @@ export const {
 export default Slice.reducer;
 EOF
 
-cat > src/features/chatBot/services/toolkit/ChatBotHandlers.jsx << 'EOF'
+cat > src/features/chatBot/services/toolkit/ChatBotHandlers.js << 'EOF'
 /* eslint-disable no-unused-vars */
 import { setInput, setIsTyping, setMessages } from "./ChatBotSlice";
 
