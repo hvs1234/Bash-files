@@ -1,26 +1,22 @@
 #!/bin/bash
 
-python3 -m venv .venv
-source .venv/bin/activate
-
 pip install "fastapi[standard]" uvicorn sqlalchemy psycopg2-binary python-dotenv pydantic
 
 pip freeze > requirements.txt
 
-mkdir -p features/app/routes
-mkdir -p features/app/schemas
-mkdir -p features/app/db
-mkdir -p features/app/models
+mkdir -p features/blog/routes
+mkdir -p features/blog/schemas
+mkdir -p features/blog/db
+mkdir -p features/blog/models
 
-touch features/app/main.py
-touch features/app/models/__init__.py
-touch features/app/models/models.py
-touch features/app/db/__init__.py
-touch features/app/db/dbSetup.py
-touch features/app/routes/__init__.py
-touch features/app/routes/routes.py
-touch features/app/schemas/__init__.py
-touch features/app/schemas/schemas.py
+touch features/blog/models/__init__.py
+touch features/blog/models/models.py
+touch features/blog/db/__init__.py
+touch features/blog/db/dbSetup.py
+touch features/blog/routes/__init__.py
+touch features/blog/routes/routes.py
+touch features/blog/schemas/__init__.py
+touch features/blog/schemas/schemas.py
 
 touch ProcFile
 touch README.md
@@ -28,12 +24,25 @@ touch dockerfile
 touch .dockerignore
 touch .gitignore
 
-cat > features/app/main.py << 'EOF'
+cat > features/blog/main.py << 'EOF'
 from fastapi import FastAPI
+from pydantic import typing
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-app = FastAPI()
+app = FastAPI(title="Blogger Backend", description="This is for service based app")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_crendentails=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/")
-def home():
-    return {"data": "Hello world"}
+def root():
+    return JSONResponse(content={"message": "Welcome to fastapi service"})
 EOF
+
