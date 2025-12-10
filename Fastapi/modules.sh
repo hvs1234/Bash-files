@@ -8,6 +8,7 @@ mkdir -p features/blog/routes
 mkdir -p features/blog/schemas
 mkdir -p features/blog/db
 mkdir -p features/blog/models
+mkdir -p .vscode
 
 touch features/blog/models/__init__.py
 touch features/blog/models/blogModels.py
@@ -25,5 +26,5 @@ touch dockerfile
 touch .dockerignore
 touch .gitignore
 touch .env
-
+touch .vscode/settings.json
 

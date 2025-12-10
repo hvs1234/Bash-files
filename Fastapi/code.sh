@@ -1,3 +1,33 @@
+cat > .vscode/settings.json <<'EOF'
+{
+  "material-icon-theme.folders.associations": {
+    "global_component": "global",
+    "global_components": "global",
+    "globalComponent": "global",
+    "globalComponents": "global",
+    "globalService": "robot",
+    "globalServices": "robot",
+    "shared_component": "components",
+    "shared_components": "components",
+    "sharedComponents": "components",
+    "sharedComponent": "components",
+    "ui_elements": "components",
+    "ui_element": "components",
+    "uiElements": "components",
+    "uiElement": "components",
+    "widgets": "components",
+    "btns": "ui",
+    "Bash":"robot",
+    "chat":"messages",
+    "Chat":"messages",
+    "ChatBot":"messages",
+    "chatBot":"messages",
+    "uploaded_imgs":"images",
+    "uploadedImgs":"images",
+  }
+}
+EOF
+
 cat > features/blog/db/blogdbSetup.py <<'EOF'
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -247,3 +277,4 @@ node_modules
 uploaded_imgs
 static
 EOF
+
