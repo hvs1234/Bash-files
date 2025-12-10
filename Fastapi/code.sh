@@ -44,7 +44,7 @@ EOF
 
 cat > features/blog/models/blogModels.py <<'EOF'
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-from db.blogdbSetup import Base
+from features.blog.db.blogdbSetup import Base
 
 
 class MyBlogs(Base):
@@ -58,9 +58,9 @@ EOF
 cat > features/blog/routes/blogRoutes.py <<'EOF'
 from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from db.blogdbSetup import SessionLocal
-from models.blogModels import MyBlogs
-from schemas.blogSchemas import BlogCreate, BlogResponse, BlogSuccessResponse
+from features.blog.db.blogdbSetup import SessionLocal
+from features.blog.models.blogModels import MyBlogs
+from features.blog.schemas.blogSchemas import BlogCreate, BlogResponse, BlogSuccessResponse
 import os, uuid
 from typing import List
 
@@ -221,17 +221,17 @@ class BlogSuccessResponse(BaseModel):
     data: BlogResponse
 EOF
 
-cat > features/blog/main.py <<'EOF'
+cat > main.py <<'EOF'
 from fastapi import FastAPI
 from pydantic import typing
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from routes.blogRoutes import router as blog_router
-from db.blogdbSetup import engine
-from models.blogModels import Base
+from features.blog.routes.blogRoutes import router as blog_router
+from features.blog.db.blogdbSetup import engine
+from features.blog.models.blogModels import BlogBase
 
-app = FastAPI(title="Blogger Backend", description="This is for service based app")
+app = FastAPI(title="Blogger Backend", description="This is for service Blogbased app")
 
 app.add_middleware(
     CORSMiddleware,
@@ -241,16 +241,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(blog_router, prefix="/api", tags=["blogs"])
-Base.metadata.create_all(bind=engine)
+BlogBase.metadata.create_all(bind=engine)
 app.mount(
     "/features/blog/uploaded_imgs",
     StaticFiles(directory="features/blog/uploaded_imgs"),
     name="uploaded_imgs",
 )
 
-
 @app.get("/")
 def root():
+    return JSONResponse(content={"message": "Welcome to fastapi service"})
+
     return JSONResponse(content={"message": "Welcome to fastapi service"})
 EOF
 

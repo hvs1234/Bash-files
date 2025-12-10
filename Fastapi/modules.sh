@@ -18,8 +18,8 @@ touch features/blog/routes/__init__.py
 touch features/blog/routes/blogRoutes.py
 touch features/blog/schemas/__init__.py
 touch features/blog/schemas/blogSchemas.py
-touch features/blog/main.py
 
+touch main.py
 touch ProcFile
 touch README.md
 touch dockerfile
